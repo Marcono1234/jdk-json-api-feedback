@@ -23,7 +23,9 @@
  * questions.
  */
 
-package oracle.code.json;
+package java.util.json;
+
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * The interface that represents a JSON value.
@@ -71,6 +73,7 @@ package oracle.code.json;
  *
  * @since 99
  */
+@PreviewFeature(feature = PreviewFeature.Feature.JSON)
 public sealed interface JsonValue
         permits JsonString, JsonNumber, JsonObject, JsonArray, JsonBoolean, JsonNull {
 
@@ -81,9 +84,9 @@ public sealed interface JsonValue
      * JSON element, except that the returned string does not contain any white
      * spaces or newlines to produce a compact representation.
      * For a String representation suitable for display, use
-     * {@link Json#toDisplayString(JsonValue)}.
+     * {@link Json#toDisplayString(JsonValue, int)}.
      *
-     * @see Json#toDisplayString(JsonValue)
+     * @see Json#toDisplayString(JsonValue, int)
      */
     String toString();
 }

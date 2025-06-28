@@ -23,13 +23,15 @@
  * questions.
  */
 
-package oracle.code.json.impl;
-
-import oracle.code.json.*;
+package jdk.internal.util.json;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.json.JsonArray;
+import java.util.json.JsonObject;
+import java.util.json.JsonParseException;
+import java.util.json.JsonString;
+import java.util.json.JsonValue;
 
 /**
  * Parses a JSON Document char[] into a tree of JsonValues. JsonObject and JsonArray
@@ -96,9 +98,7 @@ public final class JsonParser {
      * See https://datatracker.ietf.org/doc/html/rfc8259#section-4
      */
     private JsonObject parseObject() {
-        // @@@ Do not preserve encounter order, requires adjustment to the API
-//        var members = new LinkedHashMap<String, JsonValue>();
-        var members = new HashMap<String, JsonValue>();
+        var members = new LinkedHashMap<String, JsonValue>();
         offset++; // Walk past the '{'
         skipWhitespaces();
         // Check for empty case

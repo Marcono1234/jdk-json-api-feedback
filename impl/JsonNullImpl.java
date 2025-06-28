@@ -23,15 +23,17 @@
  * questions.
  */
 
-package oracle.code.json.impl;
-
-import oracle.code.json.JsonNull;
+package jdk.internal.util.json;
 
 import java.util.Objects;
+import java.util.json.JsonNull;
+
+import jdk.internal.ValueBased;
 
 /**
  * JsonNull implementation class
  */
+@ValueBased
 public final class JsonNullImpl implements JsonNull {
 
     public static final JsonNullImpl NULL = new JsonNullImpl();

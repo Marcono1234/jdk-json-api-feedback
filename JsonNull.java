@@ -23,9 +23,10 @@
  * questions.
  */
 
-package oracle.code.json;
+package java.util.json;
 
-import oracle.code.json.impl.JsonNullImpl;
+import jdk.internal.javac.PreviewFeature;
+import jdk.internal.util.json.JsonNullImpl;
 
 /**
  * The interface that represents JSON null.
@@ -35,6 +36,7 @@ import oracle.code.json.impl.JsonNullImpl;
  *
  * @since 99
  */
+@PreviewFeature(feature = PreviewFeature.Feature.JSON)
 public non-sealed interface JsonNull extends JsonValue {
 
     /**

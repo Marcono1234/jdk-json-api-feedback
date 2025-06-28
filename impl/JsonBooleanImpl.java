@@ -23,15 +23,17 @@
  * questions.
  */
 
-package oracle.code.json.impl;
-
-import oracle.code.json.JsonBoolean;
+package jdk.internal.util.json;
 
 import java.util.Objects;
+import java.util.json.JsonBoolean;
+
+import jdk.internal.ValueBased;
 
 /**
  * JsonBoolean implementation class
  */
+@ValueBased
 public final class JsonBooleanImpl implements JsonBoolean {
 
     private final Boolean theBoolean;

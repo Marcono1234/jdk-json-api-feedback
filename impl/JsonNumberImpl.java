@@ -23,30 +23,35 @@
  * questions.
  */
 
-package oracle.code.json.impl;
-
-import oracle.code.json.JsonNumber;
+package jdk.internal.util.json;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Locale;
+import java.util.json.JsonNumber;
+
+import jdk.internal.ValueBased;
 
 /**
  * JsonNumber implementation class
  */
+@ValueBased
 public final class JsonNumberImpl implements JsonNumber {
 
     private final char[] doc;
     private final int startOffset;
     private final int endOffset;
-    private Number theNumber;
+    private final StableValue<Number> theNumber = StableValue.of();
+    private final StableValue<String> numString = StableValue.of();
+    private final StableValue<BigDecimal> cachedBD = StableValue.of();
 
     public JsonNumberImpl(Number num) {
         if (num == null ||
             num instanceof Double d && (d.isNaN() || d.isInfinite())) {
             throw new IllegalArgumentException("Not a valid JSON number");
         }
-        theNumber = num;
+        theNumber.setOrThrow(num);
+        numString.setOrThrow(num.toString());
         // unused
         startOffset = -1;
         endOffset = -1;
@@ -61,48 +66,50 @@ public final class JsonNumberImpl implements JsonNumber {
 
     @Override
     public Number toNumber() {
-        var n = theNumber;
-        if (n == null) {
-            n = theNumber = computeNumber();
-        }
-        return n;
-    }
-
-    private Number computeNumber() {
-        var str = toString();
-        // Check if integral (Java literal format)
-        boolean integerOnly = true;
-        for (int index = 0; index < str.length(); index++) {
-            char c = str.charAt(index);
-            if (c == '.' || c == 'e' || c == 'E') {
-                integerOnly = false;
-                break;
+        return theNumber.orElseSet(() -> {
+            var str = toString();
+            // Check if integral (Java literal format)
+            boolean integerOnly = true;
+            for (int index = 0; index < str.length(); index++) {
+                char c = str.charAt(index);
+                if (c == '.' || c == 'e' || c == 'E') {
+                    integerOnly = false;
+                    break;
+                }
             }
-        }
-        if (integerOnly) {
-            try {
-                return Long.parseLong(str);
-            } catch (NumberFormatException _) {
-                return new BigInteger(str);
-            }
-        } else {
-            var db = Double.parseDouble(str);
-            if (Double.isInfinite(db)) {
-                return toBigDecimal();
+            if (integerOnly) {
+                try {
+                    return Long.parseLong(str);
+                } catch (NumberFormatException _) {
+                    return new BigInteger(str);
+                }
             } else {
-                return db;
+                var db = Double.parseDouble(str);
+                if (Double.isInfinite(db)) {
+                    return toBigDecimal();
+                } else {
+                    return db;
+                }
             }
-        }
+        });
     }
 
     @Override
     public BigDecimal toBigDecimal() {
-        return new BigDecimal(toString());
+        return cachedBD.orElseSet(() -> {
+            // If we already computed theNumber, check if it's BD
+            if (theNumber.orElse(null) instanceof BigDecimal bd) {
+                return bd;
+            } else {
+                return new BigDecimal(toString());
+            }
+        });
     }
 
     @Override
     public String toString() {
-        return new String(doc, startOffset, endOffset - startOffset);
+        return numString.orElseSet(
+                () -> new String(doc, startOffset, endOffset - startOffset));
     }
 
     @Override

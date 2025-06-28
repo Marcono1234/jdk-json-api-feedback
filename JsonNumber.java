@@ -23,12 +23,13 @@
  * questions.
  */
 
-package oracle.code.json;
-
-import oracle.code.json.impl.JsonNumberImpl;
+package java.util.json;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+
+import jdk.internal.javac.PreviewFeature;
+import jdk.internal.util.json.JsonNumberImpl;
 
 /**
  * The interface that represents JSON number, an arbitrary-precision
@@ -50,6 +51,7 @@ import java.math.BigInteger;
  *      The JavaScript Object Notation (JSON) Data Interchange Format - Numbers
  * @since 99
  */
+@PreviewFeature(feature = PreviewFeature.Feature.JSON)
 public non-sealed interface JsonNumber extends JsonValue {
 
     /**

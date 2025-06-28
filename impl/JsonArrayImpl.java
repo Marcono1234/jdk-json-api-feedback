@@ -23,18 +23,20 @@
  * questions.
  */
 
-package oracle.code.json.impl;
-
-import oracle.code.json.JsonArray;
-import oracle.code.json.JsonValue;
+package jdk.internal.util.json;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.json.JsonArray;
+import java.util.json.JsonValue;
+
+import jdk.internal.ValueBased;
 
 /**
  * JsonArray implementation class
  */
+@ValueBased
 public final class JsonArrayImpl implements JsonArray {
 
     private final List<JsonValue> theValues;

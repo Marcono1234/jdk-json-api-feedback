@@ -23,11 +23,12 @@
  * questions.
  */
 
-package oracle.code.json;
-
-import oracle.code.json.impl.JsonStringImpl;
+package java.util.json;
 
 import java.util.Objects;
+
+import jdk.internal.javac.PreviewFeature;
+import jdk.internal.util.json.JsonStringImpl;
 
 /**
  * The interface that represents JSON string. Any character may be escaped,
@@ -43,6 +44,7 @@ import java.util.Objects;
  *      The JavaScript Object Notation (JSON) Data Interchange Format - Strings
  * @since 99
  */
+@PreviewFeature(feature = PreviewFeature.Feature.JSON)
 public non-sealed interface JsonString extends JsonValue {
 
     /**

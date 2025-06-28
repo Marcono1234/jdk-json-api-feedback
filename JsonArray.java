@@ -23,12 +23,13 @@
  * questions.
  */
 
-package oracle.code.json;
-
-import oracle.code.json.impl.JsonArrayImpl;
+package java.util.json;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import jdk.internal.javac.PreviewFeature;
+import jdk.internal.util.json.JsonArrayImpl;
 
 /**
  * The interface that represents JSON array.
@@ -38,6 +39,7 @@ import java.util.List;
  *
  * @since 99
  */
+@PreviewFeature(feature = PreviewFeature.Feature.JSON)
 public non-sealed interface JsonArray extends JsonValue {
 
     /**

@@ -23,45 +23,49 @@
  * questions.
  */
 
-package oracle.code.json.impl;
-
-import oracle.code.json.JsonString;
+package jdk.internal.util.json;
 
 import java.util.Objects;
+import java.util.function.Supplier;
+import java.util.json.JsonString;
+
+import jdk.internal.ValueBased;
+import jdk.internal.lang.stable.StableSupplier;
 
 /**
  * JsonString implementation class
  */
+@ValueBased
 public final class JsonStringImpl implements JsonString {
 
     private final char[] doc;
     private final int startOffset;
     private final int endOffset;
-    private final String str;// = StableSupplier.of(this::unescape);
+    private final Supplier<String> str = StableSupplier.of(this::unescape);
 
     public JsonStringImpl(String str) {
         doc = ("\"" + str + "\"").toCharArray();
         startOffset = 0;
         endOffset = doc.length;
-        this.str = unescape();
+        // Eagerly compute the unescaped JSON string to validate escape sequences
+        value();
     }
 
     public JsonStringImpl(char[] doc, int start, int end) {
         this.doc = doc;
         startOffset = start;
         endOffset = end;
-        str = unescape();
     }
 
     @Override
     public String value() {
-        var ret = str;
-        return str.substring(1, ret.length() - 1);
+        var ret = str.get();
+        return ret.substring(1, ret.length() - 1);
     }
 
     @Override
     public String toString() {
-        return str;
+        return str.get();
     }
 
     @Override

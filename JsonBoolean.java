@@ -23,9 +23,10 @@
  * questions.
  */
 
-package oracle.code.json;
+package java.util.json;
 
-import oracle.code.json.impl.JsonBooleanImpl;
+import jdk.internal.javac.PreviewFeature;
+import jdk.internal.util.json.JsonBooleanImpl;
 
 /**
  * The interface that represents JSON boolean.
@@ -36,6 +37,7 @@ import oracle.code.json.impl.JsonBooleanImpl;
  *
  * @since 99
  */
+@PreviewFeature(feature = PreviewFeature.Feature.JSON)
 public non-sealed interface JsonBoolean extends JsonValue {
 
     /**

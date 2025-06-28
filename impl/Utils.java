@@ -23,14 +23,13 @@
  * questions.
  */
 
-package oracle.code.json.impl;
-
-import oracle.code.json.JsonArray;
-import oracle.code.json.JsonObject;
-import oracle.code.json.JsonValue;
+package jdk.internal.util.json;
 
 import java.util.List;
 import java.util.Map;
+import java.util.json.JsonArray;
+import java.util.json.JsonObject;
+import java.util.json.JsonValue;
 
 /**
  * Shared utilities for Json classes.

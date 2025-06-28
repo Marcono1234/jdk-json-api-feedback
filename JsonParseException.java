@@ -23,9 +23,11 @@
  * questions.
  */
 
-package oracle.code.json;
+package java.util.json;
 
 import java.io.Serial;
+
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Signals that an error has been detected while parsing the
@@ -33,6 +35,7 @@ import java.io.Serial;
  *
  * @since 99
  */
+@PreviewFeature(feature = PreviewFeature.Feature.JSON)
 public class JsonParseException extends RuntimeException {
 
     @Serial

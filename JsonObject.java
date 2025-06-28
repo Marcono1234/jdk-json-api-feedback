@@ -23,14 +23,15 @@
  * questions.
  */
 
-package oracle.code.json;
-
-import oracle.code.json.impl.JsonObjectImpl;
-import oracle.code.json.impl.Utils;
+package java.util.json;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+
+import jdk.internal.javac.PreviewFeature;
+import jdk.internal.util.json.JsonObjectImpl;
+import jdk.internal.util.json.Utils;
 
 /**
  * The interface that represents JSON object.
@@ -43,6 +44,7 @@ import java.util.Objects;
  *
  * @since 99
  */
+@PreviewFeature(feature = PreviewFeature.Feature.JSON)
 public non-sealed interface JsonObject extends JsonValue {
 
     /**
@@ -60,11 +62,11 @@ public non-sealed interface JsonObject extends JsonValue {
      * <p>
      * If a key in the provided {@code map} contains escape characters, they are
      * unescaped before being added to the resulting {@code JsonObject}. If multiple
-     * keys unescape to the same value, an {@code IllegalArgumentException} is thrown.
+     * keys unescape to the same string, an {@code IllegalArgumentException} is thrown.
      *
      * @param map the map of {@code JsonValue}s. Non-null.
      * @throws IllegalArgumentException if {@code map} contains multiple keys
-     *      that unescape to the same value
+     *      that unescape to the same string
      * @throws NullPointerException if {@code map} is {@code null}, contains
      *      any keys that are {@code null}, or contains any values that are {@code null}
      */
@@ -77,7 +79,7 @@ public non-sealed interface JsonObject extends JsonValue {
             var val = e.getValue();
             if (ret.containsKey(unescapedKey)) {
                 throw new IllegalArgumentException(
-                        "Multiple keys unescape to the same value: '%s'".formatted(unescapedKey));
+                        "Multiple keys unescape to the same string: '%s'".formatted(unescapedKey));
             } else {
                 ret.put(unescapedKey, Objects.requireNonNull(val));
             }
