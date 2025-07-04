@@ -51,6 +51,11 @@ public non-sealed interface JsonString extends JsonValue {
      * {@return the {@code JsonString} created from the given
      * {@code String}}
      *
+     * <p>
+     * {@code src} must be a valid JSON String. The following characters
+     * must be escaped: quotation mark (U+0022), reverse solidus (U+005C), and
+     * the control characters (U+0000 through U+001F).
+     *
      * @param src the given {@code String}. Non-null.
      * @throws IllegalArgumentException if the given {@code src} is
      *          not a valid JSON string.
@@ -71,9 +76,7 @@ public non-sealed interface JsonString extends JsonValue {
     String value();
 
     /**
-     * {@return the {@code String} value represented by this {@code JsonString}
-     * surrounded by quotation marks} Any escaped characters in the original JSON
-     * string are converted to their unescaped form in the returned {@code String}.
+     * {@return the {@code String} value represented by this {@code JsonString}}
      *
      * @see #value()
      */

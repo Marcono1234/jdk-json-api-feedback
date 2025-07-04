@@ -25,7 +25,6 @@
 
 package jdk.internal.util.json;
 
-import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.json.JsonString;
 
@@ -41,14 +40,14 @@ public final class JsonStringImpl implements JsonString {
     private final char[] doc;
     private final int startOffset;
     private final int endOffset;
-    private final Supplier<String> str = StableSupplier.of(this::unescape);
+    private final Supplier<String> source = StableSupplier.of(this::source);
+    private final Supplier<String> unescaped = StableSupplier.of(this::unescape);
 
     public JsonStringImpl(String str) {
         doc = ("\"" + str + "\"").toCharArray();
         startOffset = 0;
         endOffset = doc.length;
-        // Eagerly compute the unescaped JSON string to validate escape sequences
-        value();
+        source.get(); // Validates the input String as proper JSON
     }
 
     public JsonStringImpl(char[] doc, int start, int end) {
@@ -59,27 +58,77 @@ public final class JsonStringImpl implements JsonString {
 
     @Override
     public String value() {
-        var ret = str.get();
-        return ret.substring(1, ret.length() - 1);
+        return unescaped.get();
     }
 
     @Override
     public String toString() {
-        return str.get();
+        return source.get();
     }
 
     @Override
     public boolean equals(Object o) {
         return o instanceof JsonString ojs &&
-                Objects.equals(value(), ojs.value());
+                value().equals(ojs.value());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(value());
+        return value().hashCode();
     }
 
+    // Provides the fully unescaped value with surrounding quotes trimmed.
+    // This method fully unescapes 2 char sequences as well as U escape sequences.
+    // As a result of un-escaping, the resultant String may not be JSON conformant.
     private String unescape() {
-        return Utils.unescape(doc, startOffset, endOffset);
+        StringBuilder sb = null; // Only use if required
+        var escape = false;
+        int start = startOffset + 1;
+        int end = endOffset - 1;
+        boolean useBldr = false;
+        for (int offset = start; offset < end; offset++) {
+            var c = doc[offset];
+            if (escape) {
+                var length = 0;
+                switch (c) {
+                    case '"', '\\', '/' -> {}
+                    case 'b' -> c = '\b';
+                    case 'f' -> c = '\f';
+                    case 'n' -> c = '\n';
+                    case 'r' -> c = '\r';
+                    case 't' -> c = '\t';
+                    case 'u' -> {
+                        if (offset + 4 < endOffset) {
+                            c = Utils.codeUnit(doc, offset + 1);
+                            length = 4;
+                        }
+                    }
+                }
+                if (!useBldr) {
+                    useBldr = true;
+                    // At best, we know the size of the first escaped value
+                    sb = new StringBuilder(end - start - length - 1)
+                            .append(doc, start, offset - 1 - start);
+                }
+                offset+=length;
+                escape = false;
+            } else if (c == '\\') {
+                escape = true;
+                continue;
+            }
+            if (useBldr) {
+                sb.append(c);
+            }
+        }
+        if (useBldr) {
+            return sb.toString();
+        } else {
+            return new String(doc, start, end - start);
+        }
+    }
+
+    private String source() {
+        // getSource throws on quotes, so bypass and re-insert
+        return '"' + Utils.getCompliantString(doc, startOffset + 1, endOffset - 1) + '"';
     }
 }

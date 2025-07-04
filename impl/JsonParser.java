@@ -27,6 +27,8 @@ package jdk.internal.util.json;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.json.JsonArray;
 import java.util.json.JsonObject;
 import java.util.json.JsonParseException;
@@ -98,14 +100,14 @@ public final class JsonParser {
      * See https://datatracker.ietf.org/doc/html/rfc8259#section-4
      */
     private JsonObject parseObject() {
-        var members = new LinkedHashMap<String, JsonValue>();
         offset++; // Walk past the '{'
         skipWhitespaces();
         // Check for empty case
         if (currCharEquals('}')) {
             offset++;
-            return new JsonObjectImpl(members);
+            return new JsonObjectImpl(Map.of());
         }
+        var members = new LinkedHashMap<String, JsonValue>();
         while (hasInput()) {
             // Get the member name, which should be unescaped
             // Why not parse the name as a JsonString and then return its value()?
@@ -143,8 +145,9 @@ public final class JsonParser {
     }
 
     /*
-     * Member name equality and storage in the map should be done with the
-     * unescaped String value.
+     * Member name equality and storage in the map should be done with Unicode
+     * escape sequences converted to their char equivalents. This method is
+     * similar to Utils.getCompliantString, but for the parsing side.
      * See https://datatracker.ietf.org/doc/html/rfc8259#section-8.3
      */
     private String parseName() {
@@ -159,14 +162,10 @@ public final class JsonParser {
             var c = doc[offset];
             if (escape) {
                 var escapeLength = 0;
+                var dropEscape = false;
                 switch (c) {
-                    // Allowed JSON escapes
-                    case '"', '\\', '/' -> {}
-                    case 'b' -> c = '\b';
-                    case 'f' -> c = '\f';
-                    case 'n' -> c = '\n';
-                    case 'r' -> c = '\r';
-                    case 't' -> c = '\t';
+                    // Eligible 2 char escapes
+                    case '"', '\\', '/', 'b', 'f', 'n', 'r', 't' -> {}
                     case 'u' -> {
                         if (offset + 4 < doc.length) {
                             escapeLength = 4;
@@ -174,6 +173,18 @@ public final class JsonParser {
                             c = codeUnit();
                             // Move to the last hex digit, since outer loop will increment offset
                             offset += 3;
+                            c = switch (c) {
+                                case '"', '\\', '/' -> c;
+                                case '\b' -> 'b';
+                                case '\f' -> 'f';
+                                case '\n' -> 'n';
+                                case '\r' -> 'r';
+                                case '\t' -> 't';
+                                default -> {
+                                    dropEscape = true;
+                                    yield c;
+                                }
+                            };
                         } else {
                             throw failure("Invalid Unicode escape sequence");
                         }
@@ -183,13 +194,17 @@ public final class JsonParser {
                 if (!useBldr) {
                     initBuilder();
                     // Append everything up to the first escape sequence
-                    builder.append(doc, start, offset - escapeLength - 1 - start);
+                    builder.append(doc, start, offset - escapeLength - start);
                     useBldr = true;
+                }
+                if (dropEscape) {
+                    // Remove the backslash on valid converted U escape sequence
+                    // that does not require escaping
+                    builder.deleteCharAt(builder.length() - 1);
                 }
                 escape = false;
             } else if (c == '\\') {
                 escape = true;
-                continue;
             } else if (c == '\"') {
                 offset++;
                 if (useBldr) {
@@ -215,14 +230,14 @@ public final class JsonParser {
      * See https://datatracker.ietf.org/doc/html/rfc8259#section-5
      */
     private JsonArray parseArray() {
-        var list = new ArrayList<JsonValue>();
         offset++; // Walk past the '['
         skipWhitespaces();
         // Check for empty case
         if (currCharEquals(']')) {
             offset++;
-            return new JsonArrayImpl(list);
+            return new JsonArrayImpl(List.of());
         }
+        var list = new ArrayList<JsonValue>();
         for (; hasInput(); offset++) {
             // Get the JsonValue
             list.add(parseValue());
@@ -316,12 +331,12 @@ public final class JsonParser {
         boolean sawDecimal = false;
         boolean sawExponent = false;
         boolean sawZero = false;
-        boolean sawWhitespace = false;
         boolean havePart = false;
-        boolean sawInvalid = false;
         boolean sawSign = false;
         var start = offset;
-        for (; hasInput() && !sawWhitespace && !sawInvalid; offset++) {
+
+        endloop:
+        for (; hasInput(); offset++) {
             switch (doc[offset]) {
                 case '-' -> {
                     if (offset != start && !sawExponent || sawSign) {
@@ -335,15 +350,12 @@ public final class JsonParser {
                     }
                     sawSign = true;
                 }
-                case '0' -> {
-                    if (!havePart) {
-                        sawZero = true;
-                    }
-                    havePart = true;
-                }
-                case '1', '2', '3', '4', '5', '6', '7', '8', '9' -> {
+                case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> {
                     if (!sawDecimal && !sawExponent && sawZero) {
                         throw failure("Invalid '0' position");
+                    }
+                    if (doc[offset] == '0' && !havePart) {
+                        sawZero = true;
                     }
                     havePart = true;
                 }
@@ -370,13 +382,9 @@ public final class JsonParser {
                         sawSign = false;
                     }
                 }
-                case ' ', '\t', '\r', '\n' -> {
-                    sawWhitespace = true;
-                    offset --;
-                }
                 default -> {
-                    offset--;
-                    sawInvalid = true;
+                    // break the loop for white space or invalid characters
+                    break endloop;
                 }
             }
         }
@@ -460,7 +468,7 @@ public final class JsonParser {
     // Returns true if the substring starting at the given offset equals the
     // input String and is within bounds of the JSON document
     private boolean charsEqual(String str, int o) {
-        if (o + str.length() - 1 < doc.length) {
+        if (o + str.length() <= doc.length) {
             for (int index = 0; index < str.length(); index++) {
                 if (doc[o] != str.charAt(index)) {
                     return false; // char does not match

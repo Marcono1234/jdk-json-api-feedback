@@ -27,7 +27,6 @@ package jdk.internal.util.json;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.Objects;
 import java.util.json.JsonObject;
 import java.util.json.JsonValue;
 
@@ -67,11 +66,11 @@ public final class JsonObjectImpl implements JsonObject {
     @Override
     public boolean equals(Object o) {
         return o instanceof JsonObject ojo &&
-                Objects.equals(members(), ojo.members());
+                members().equals(ojo.members());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(members());
+        return members().hashCode();
     }
 }

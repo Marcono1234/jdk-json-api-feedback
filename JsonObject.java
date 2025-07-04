@@ -60,13 +60,13 @@ public non-sealed interface JsonObject extends JsonValue {
      * The {@code JsonObject}'s members occur in the same order as the given
      * map's entries.
      * <p>
-     * If a key in the provided {@code map} contains escape characters, they are
-     * unescaped before being added to the resulting {@code JsonObject}. If multiple
-     * keys unescape to the same string, an {@code IllegalArgumentException} is thrown.
+     * If a key in the provided {@code map} contains escaped Unicode escape sequences,
+     * they are unescaped before being added to the resulting {@code JsonObject}
+     * as a member name. If duplicate member names are found, an {@code
+     * IllegalArgumentException} is thrown.
      *
      * @param map the map of {@code JsonValue}s. Non-null.
-     * @throws IllegalArgumentException if {@code map} contains multiple keys
-     *      that unescape to the same string
+     * @throws IllegalArgumentException if there are duplicate member names.
      * @throws NullPointerException if {@code map} is {@code null}, contains
      *      any keys that are {@code null}, or contains any values that are {@code null}
      */
@@ -75,13 +75,9 @@ public non-sealed interface JsonObject extends JsonValue {
         for (var e : map.entrySet()) {
             var key = e.getKey();
             // Implicit NPE on key
-            var unescapedKey = Utils.unescape(key.toCharArray(), 0, key.length());
-            var val = e.getValue();
-            if (ret.containsKey(unescapedKey)) {
-                throw new IllegalArgumentException(
-                        "Multiple keys unescape to the same string: '%s'".formatted(unescapedKey));
-            } else {
-                ret.put(unescapedKey, Objects.requireNonNull(val));
+            var jsonKey = Utils.getCompliantString(key.toCharArray(), 0, key.length());
+            if (ret.putIfAbsent(jsonKey, Objects.requireNonNull(e.getValue())) != null) {
+                throw new IllegalArgumentException("Duplicate member name: '%s'".formatted(jsonKey));
             }
         }
         return new JsonObjectImpl(ret);

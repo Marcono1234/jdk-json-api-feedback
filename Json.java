@@ -105,6 +105,7 @@ public final class Json {
      */
     public static JsonValue parse(char[] in) {
         Objects.requireNonNull(in);
+        // Defensive copy on input. Ensure source is immutable.
         return new JsonParser(Arrays.copyOf(in, in.length)).parseRoot();
     }
 
@@ -179,17 +180,15 @@ public final class Json {
                     throw new IllegalArgumentException("Circular reference detected");
                 }
                 Map<String, JsonValue> m = LinkedHashMap.newLinkedHashMap(map.size());
-                for (Map.Entry<?, ?> entry : new LinkedHashMap<>(map).entrySet()) {
+                for (Map.Entry<?, ?> entry : map.entrySet()) {
                     if (!(entry.getKey() instanceof String strKey)) {
-                        throw new IllegalArgumentException("Key is not a String: " + entry.getKey());
+                        throw new IllegalArgumentException(
+                                "The key '%s' is not a String".formatted(entry.getKey()));
                     } else {
-                        var unescapedKey = Utils.unescape(
-                                strKey.toCharArray(), 0, strKey.length());
-                        if (m.containsKey(unescapedKey)) {
-                            throw new IllegalArgumentException(
-                                    "Duplicate member name: '%s'".formatted(unescapedKey));
-                        } else {
-                            m.put(unescapedKey, Json.fromUntyped(entry.getValue(), identitySet));
+                        var key = Utils.getCompliantString(strKey.toCharArray(), 0, strKey.length());
+                        // Can't correctly return null since mapped to JsonNull, so null is error
+                        if (m.putIfAbsent(key, Json.fromUntyped(entry.getValue(), identitySet)) != null) {
+                            throw new IllegalArgumentException("Duplicate member name: '%s'".formatted(key));
                         }
                     }
                 }
@@ -221,7 +220,7 @@ public final class Json {
             case null -> JsonNull.of();
             // JsonValue
             case JsonValue jv -> jv;
-            default -> throw new IllegalArgumentException("Type not recognized.");
+            default -> throw new IllegalArgumentException(src.getClass().getSimpleName() + " is not a recognized type");
         };
     }
 
@@ -277,7 +276,7 @@ public final class Json {
         Objects.requireNonNull(src);
         return switch (src) {
             case JsonObject jo -> jo.members().entrySet().stream()
-                    .collect(LinkedHashMap::new, // to allow `null` value
+                    .collect(LinkedHashMap::new, // Avoid Collectors.toMap, to allow `null` value
                             (m, e) -> m.put(e.getKey(), Json.toUntyped(e.getValue())),
                             HashMap::putAll);
             case JsonArray ja -> ja.values().stream()
